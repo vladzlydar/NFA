@@ -1,6 +1,8 @@
-import random
+
 stanPoczatkowy = 'q0'
+
 stanyAkceptujace = ['q8', 'q9', 'q10', 'q11', 'q12', 'q18', 'q19', 'q20', 'q21', 'q22']
+
 tablicaPrzejsc = {
     'q0':{'0':['q1','q3'], '1':['q1','q4'], '2':['q1','q5'], '3':['q1','q6'], '4':['q1','q7'], 'a':['q2','q13'], 'b':['q2','q14'], 'c':['q2','q15'], 'd':['q2','q16'], 'e':['q2','q17']},
     'q1':{'0':['q1','q3'], '1':['q1','q4'], '2':['q1','q5'], '3':['q1','q6'], '4':['q1','q7'], 'a':['X'], 'b':['X'], 'c':['X'], 'd':['X'], 'e':['X']},
@@ -29,40 +31,58 @@ tablicaPrzejsc = {
 }
 
 
-def NFA(aktualnyStan,tabelaPrzejsc,stanyAkceptujace,word,sciezkaNFA):
-    if word == "":
-        nfaResult = aktualnyStan in stanyAkceptujace
-        if nfaResult == True:
-            sciezkaNFA.append(aktualnyStan)
-            return (nfaResult,sciezkaNFA)
-        if nfaResult == False:
-            return (nfaResult,sciezkaNFA)
+
+# def xxx(sciezki, stack):
+#     tempStack.append("a")
+#     sciezkaNfa.append(tempStack)
+#
+# xxx(sciezkaNfa,tempStack)
+# print(sciezkaNfa,tempStack)
+
+
+
+def NFA(slowo, stan, sciezkaNfa,tempStack):
+    global list
+    if slowo == "":
+        tempStack.append(stan)
+        sciezkaNfa.append(tempStack[:])
+        tempStack.pop()
     else:
-        letter = word[0:1]
-        if (aktualnyStan in tabelaPrzejsc.keys()) and (letter in tabelaPrzejsc[aktualnyStan].keys()):
-            remainder = word[1:]
-            noweStany = tabelaPrzejsc[aktualnyStan][letter]
-            print("Aktualny stan %s, Analiza litery %s" % (aktualnyStan, letter))
-            for nowystan in noweStany:
-                (nfaResult, sciezka) = NFA(nowystan,tabelaPrzejsc,stanyAkceptujace,remainder,sciezkaNFA)
-                if nfaResult == True:
-                    sciezkaNFA.append(aktualnyStan)
-                    return (True , sciezkaNFA)
-        return (False,sciezkaNFA)
+        tempStack.append(stan)
+        print("obecny stan = %s"%stan)
+        nextStates = tablicaPrzejsc[stan][slowo[0]]
+        if nextStates:
+            for i in nextStates:
+                NFA(slowo[1:], i, sciezkaNfa, tempStack)
+        else:
+            sciezkaNfa.append(tempStack[:])
+        tempStack.pop()
 
 
 file = open("words_to_analyze.txt","r")
 for i in file:
     for j in [x.strip() for x in i.split("#")]:
+        tempStack = []
+        sciezkiNfa = []
+        sciezkiAkceptujace = []
+        sciezkiNieakceptujace = []
         print("\nAnalizowany ciag : '%s'"%j)
-        sciezkaNFA = []
-        accept,sciezkaNFA= NFA(stanPoczatkowy,tablicaPrzejsc,stanyAkceptujace,j,sciezkaNFA)
-        sciezkaNFA.reverse()
-        if accept == True:
+        NFA(j,stanPoczatkowy,sciezkiNfa,tempStack)
+        for sciezkaNfa in sciezkiNfa:
+            if sciezkaNfa[len(sciezkaNfa)-1] in stanyAkceptujace:
+                sciezkiAkceptujace.append(sciezkaNfa)
+            else:
+                sciezkiNieakceptujace.append(sciezkaNfa)
+        if len(sciezkiAkceptujace) >0:
             print("Automat akceptuje analizowane slowo!")
-            print("Sciezka NFA: %s" %sciezkaNFA)
+            for sciezkaAkceptujaca in sciezkiAkceptujace:
+                if sciezkaAkceptujaca in ["q8", "q9", "q10", "q11", "q12"]:
+                    print("Powtorzenie wystapilo w cyfrach")
+                elif sciezkaAkceptujaca in ["q18", "q19", "q20", "q21", "q22"]:
+                    print("Powtorzenie wystapilo w literach")
+                print("Sciezka akceptujaca:")
+                print(sciezkaAkceptujaca)
         else:
-            print("Automat nie akceptuje analizowane slowo")
-
-
-
+            print("Automat nie akceptuje analizowane slowo!")
+            print("Wszystkie mozliwe sciezki")
+            print(sciezkiNfa)
